@@ -24,7 +24,7 @@ public class AccountService {
     }
 
     @Transactional
-    public void transfer(String fromAcc, String toAcc, Double amount) {
+    public Double transfer(String fromAcc, String toAcc, Double amount) {
 
         Account sender = accountRepository.findByAccountNumber(fromAcc)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
@@ -44,6 +44,28 @@ public class AccountService {
 
         Transaction txn = new Transaction(fromAcc, toAcc, amount);
         transactionRepository.save(txn);
+
+        return sender.getBalance(); // return updated balance
+    }
+    @Transactional
+    public Double deposit(String accountNumber, Double amount) {
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        account.setBalance(account.getBalance() + amount);
+
+        accountRepository.save(account);
+
+        Transaction txn = new Transaction(
+                "SELF",
+                accountNumber,
+                amount
+        );
+
+        transactionRepository.save(txn);
+
+        return account.getBalance();
     }
     public Optional<Account> getAccount(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber);

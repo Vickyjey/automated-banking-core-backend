@@ -6,4 +6,5 @@ import com.bank.corebackend.model.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
+    long countByUsername(String username);
 }
