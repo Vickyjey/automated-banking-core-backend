@@ -3,6 +3,7 @@ package com.bank.corebackend.controller;
 import com.bank.corebackend.dto.ApiResponse;
 import com.bank.corebackend.dto.DepositRequest;
 import com.bank.corebackend.dto.TransferResponse;
+import com.bank.corebackend.dto.WithdrawRequest;
 import com.bank.corebackend.model.Transaction;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -60,5 +61,16 @@ public class AccountController {
         );
 
         return "Deposit Successful. Updated Balance: " + updatedBalance;
+    }
+
+    @PostMapping("/withdraw")
+    public String withdraw(@RequestBody WithdrawRequest request) {
+
+        Double updatedBalance = accountService.withdraw(
+                request.getAccountNumber(),
+                request.getAmount()
+        );
+
+        return "Withdrawn Successfully. Updated Balance: " + updatedBalance;
     }
 }

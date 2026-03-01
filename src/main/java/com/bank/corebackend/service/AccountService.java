@@ -50,6 +50,10 @@ public class AccountService {
     @Transactional
     public Double deposit(String accountNumber, Double amount) {
 
+        if (amount == null || amount <= 0) {
+            throw new RuntimeException("Amount must be greater than zero");
+        }
+
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
@@ -67,6 +71,34 @@ public class AccountService {
 
         return account.getBalance();
     }
+
+    @Transactional
+    public Double withdraw(String accountNumber, Double amount) {
+
+        if (amount == null || amount <= 0) {
+            throw new RuntimeException("Amount must be greater than zero");
+        }
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if (account.getBalance() < amount) {
+            throw new RuntimeException("Insufficient balance");
+        }
+
+        account.setBalance(account.getBalance() - amount);
+        accountRepository.save(account);
+
+        Transaction txn = new Transaction(
+                accountNumber,
+                "CASH-WITHDRAWAL",
+                amount
+        );
+        transactionRepository.save(txn);
+
+        return account.getBalance();
+    }
+
     public Optional<Account> getAccount(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber);
     }

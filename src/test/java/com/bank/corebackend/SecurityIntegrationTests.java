@@ -17,6 +17,8 @@ import java.util.Date;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -115,5 +117,42 @@ class SecurityIntegrationTests {
     void adminSeederCreatesSingleAdminUser() {
         long adminCount = userRepository.countByUsername("admin");
         org.junit.jupiter.api.Assertions.assertEquals(1, adminCount);
+    }
+
+    @Test
+    void forgotPasswordAllowsLoginWithNewPassword() throws Exception {
+        String username = "reset-" + System.nanoTime();
+        String oldPassword = "oldpass";
+        String newPassword = "newpass";
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"" + username + "\",\"password\":\"" + oldPassword + "\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"" + username + "\",\"newPassword\":\"" + newPassword + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Password updated successfully. Please login."));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"" + username + "\",\"password\":\"" + oldPassword + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"" + username + "\",\"password\":\"" + newPassword + "\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void loginWithUnknownUsernameReturnsPasswordIncorrectMessage() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"missing-user\",\"password\":\"anything\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password is incorrect"));
     }
 }
